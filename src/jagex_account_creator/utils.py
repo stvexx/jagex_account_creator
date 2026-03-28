@@ -6,9 +6,9 @@ import threading
 from datetime import timedelta
 from pathlib import Path
 
-import rnet
+import wreq
 from loguru import logger
-from rnet.blocking import Client
+from wreq.blocking import Client
 
 from . import models
 
@@ -71,30 +71,30 @@ def save_account_to_file(
         logger.debug(f"Account: {account.email} saved to file: {accounts_file_path}")
 
 
-_CHROME_EMULATION_MAP: dict[int, rnet.Emulation] = {}
-for name in dir(rnet.Emulation):
+_CHROME_EMULATION_MAP: dict[int, wreq.Emulation] = {}
+for name in dir(wreq.Emulation):
     m = re.search(r"(\d+)", name)
     if m:
-        _CHROME_EMULATION_MAP[int(m.group(1))] = getattr(rnet.Emulation, name)
+        _CHROME_EMULATION_MAP[int(m.group(1))] = getattr(wreq.Emulation, name)
 
 
-def setup_rnet_client(user_agent: str, timeout_seconds: int) -> Client:
-    """Setup an rnet client."""
+def setup_wreq_client(user_agent: str, timeout_seconds: int) -> Client:
+    """Setup an wreq client."""
     if "Windows" in user_agent:
-        emulation_os = rnet.EmulationOS.Windows
+        emulation_os = wreq.EmulationOS.Windows
     elif "Macintosh" in user_agent:
-        emulation_os = rnet.EmulationOS.MacOS
+        emulation_os = wreq.EmulationOS.MacOS
     elif "Linux" in user_agent:
-        emulation_os = rnet.EmulationOS.Linux
+        emulation_os = wreq.EmulationOS.Linux
     else:
-        emulation_os = rnet.EmulationOS.Windows
+        emulation_os = wreq.EmulationOS.Windows
 
     match = re.search(r"Chrome/(\d+)", user_agent)
     chrome_version = int(match.group(1)) if match else max(_CHROME_EMULATION_MAP)
     closest = min(_CHROME_EMULATION_MAP, key=lambda v: abs(v - chrome_version))
 
     return Client(
-        emulation=rnet.EmulationOption(
+        emulation=wreq.EmulationOption(
             emulation=_CHROME_EMULATION_MAP[closest],
             emulation_os=emulation_os,
         ),

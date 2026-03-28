@@ -9,13 +9,13 @@ from pathlib import Path
 
 import platformdirs
 import pyotp
-import rnet
+import wreq
 from DrissionPage import Chromium, ChromiumOptions
 from DrissionPage.common import Settings
 from DrissionPage.items import ChromiumElement, MixTab
 from imap_tools import AND, MailBox
 from loguru import logger
-from rnet.blocking import Client
+from wreq.blocking import Client
 
 from . import models, utils
 from .gproxy import GProxy
@@ -68,7 +68,7 @@ class AccountCreator:
 
     def __init__(
         self,
-        rnet_client: Client,
+        wreq_client: Client,
         user_agent: str,
         element_wait_timeout: int,
         cache_update_threshold: float,
@@ -106,14 +106,14 @@ class AccountCreator:
             self.imap_details = imap_details
         else:
             self.use_proxy_for_temp_mail = use_proxy_for_temp_mail
-            self.rnet_client = rnet_client or utils.setup_rnet_client(
+            self.wreq_client = wreq_client or utils.setup_wreq_client(
                 user_agent=self.user_agent,
                 timeout_seconds=self.element_wait_timeout,
             )
             if self.proxy:
-                self.rnet_proxy = self.proxy.to_rnet()
+                self.wreq_proxy = self.proxy.to_wreq()
             else:
-                self.rnet_proxy = None
+                self.wreq_proxy = None
 
         Settings.set_language("en")
 
@@ -326,10 +326,10 @@ class AccountCreator:
         guerrilla_mail_api_url = "https://api.guerrillamail.com/ajax.php"
         self.logger.debug("Getting account verification code via Guerrilla mail.")
 
-        get_email_resp = self.rnet_client.get(
+        get_email_resp = self.wreq_client.get(
             url=guerrilla_mail_api_url,
             query={"f": "get_email_address", "lang": "en"},
-            proxy=self.rnet_proxy,
+            proxy=self.wreq_proxy,
         )
         self.logger.debug(f"Response: {get_email_resp}")
         get_email_resp.raise_for_status()
@@ -341,7 +341,7 @@ class AccountCreator:
         email_username = email_username.lower()
 
         self.logger.debug(f"Sending request to set Guerrilla Mail email to: {email_username}.")
-        set_email_resp = self.rnet_client.get(
+        set_email_resp = self.wreq_client.get(
             url=guerrilla_mail_api_url,
             query={
                 "f": "set_email_user",
@@ -349,7 +349,7 @@ class AccountCreator:
                 "lang": "en",
                 "sid_token": sid_token,
             },
-            proxy=self.rnet_proxy,
+            proxy=self.wreq_proxy,
         )
         self.logger.debug(f"Response: {set_email_resp}")
         set_email_resp.raise_for_status()
@@ -360,10 +360,10 @@ class AccountCreator:
         timeout = time.monotonic() + timeout_seconds
         while time.monotonic() < timeout:
             self.logger.debug("Sending request to check our email.")
-            check_email_resp = self.rnet_client.get(
+            check_email_resp = self.wreq_client.get(
                 url=guerrilla_mail_api_url,
                 query={"f": "check_email", "sid_token": sid_token, "seq": 0},
-                proxy=self.rnet_proxy,
+                proxy=self.wreq_proxy,
             )
             self.logger.debug(f"Response: {check_email_resp}")
             check_email_resp.raise_for_status()
@@ -384,7 +384,7 @@ class AccountCreator:
         timeout = time.monotonic() + timeout_seconds
         while time.monotonic() < timeout:
             self.logger.debug("Sending request to check our email.")
-            check_email_resp = self.rnet_client.get(
+            check_email_resp = self.wreq_client.get(
                 url="https://api.xitroo.com/v1/mails",
                 query={
                     "locale": "en",
@@ -395,7 +395,7 @@ class AccountCreator:
                     "minTimestamp": str(time.time() - timeout_seconds),
                     "maxTimestamp": str(time.time() + timeout_seconds),
                 },
-                proxy=self.rnet_proxy,
+                proxy=self.wreq_proxy,
             )
             self.logger.debug(f"Response: {check_email_resp}")
             check_email_resp.raise_for_status()

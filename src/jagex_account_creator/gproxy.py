@@ -292,7 +292,7 @@ class GProxy:
                         stats.bytes_sent += len(data)
                     else:
                         stats.bytes_received += len(data)
-                except (BlockingIOError, InterruptedError):
+                except BlockingIOError, InterruptedError:
                     continue
 
     def _parse_destination(self, request: HttpRequest) -> tuple[str, int]:
@@ -400,7 +400,7 @@ class GProxy:
     def _safe_handle_request(self, client_socket: socket.socket) -> None:
         try:
             self._handle_request(client_socket)
-        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+        except ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError:
             pass
         except TimeoutError:
             self.logger.debug("Socket read timeout")

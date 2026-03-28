@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from loguru import logger
-from rnet.blocking import Client
+from wreq.blocking import Client
 
 from jagex_account_creator import models, utils
 from jagex_account_creator.account_creator import AccountCreator
@@ -87,13 +87,13 @@ def handle_result(
             logger.info(f"Created {counters['created']}/{accounts_to_create} accounts.")
 
 
-def test_proxy(rnet_client: Client, proxy: models.Proxy) -> bool:
+def test_proxy(wreq_client: Client, proxy: models.Proxy) -> bool:
     """Check if we can authenticate and get the real ip of the proxy."""
     try:
-        resp = rnet_client.get(
+        resp = wreq_client.get(
             url="https://api.ipify.org/",
             query={"format": "json"},
-            proxy=proxy.to_rnet(),
+            proxy=proxy.to_wreq(),
         )
         resp.raise_for_status()
     except Exception:
@@ -143,7 +143,7 @@ def main():
     timeout_seconds = config["browser"]["element_wait_timeout"]
     user_agent = config["browser"]["user_agent"]
 
-    rnet_client = utils.setup_rnet_client(
+    wreq_client = utils.setup_wreq_client(
         user_agent=user_agent,
         timeout_seconds=timeout_seconds,
     )
@@ -162,7 +162,7 @@ def main():
 
             if config["proxies"]["enabled"] and proxies:
                 proxy = proxies[(proxy_start_index + i) % len(proxies)]
-                if not test_proxy(rnet_client=rnet_client, proxy=proxy):
+                if not test_proxy(wreq_client=wreq_client, proxy=proxy):
                     # TODO: It'd probably be better if we retried with a new proxy.
                     # Currently this will exit the attempt early but not retry.
                     continue
@@ -173,7 +173,7 @@ def main():
 
             ac = AccountCreator(
                 user_agent=user_agent,
-                rnet_client=rnet_client,
+                wreq_client=wreq_client,
                 element_wait_timeout=timeout_seconds,
                 cache_update_threshold=config["browser"]["cache_update_threshold"],
                 enable_dev_tools=config["browser"]["enable_dev_tools"],

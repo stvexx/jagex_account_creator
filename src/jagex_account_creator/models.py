@@ -4,7 +4,7 @@ from enum import StrEnum
 from functools import lru_cache
 
 import pyotp
-import rnet
+import wreq
 from pydantic import BaseModel, ConfigDict
 
 
@@ -24,9 +24,9 @@ class Proxy(BaseModel):
             proxy_url = f"http://{self.ip}:{self.port}"
         return proxy_url
 
-    def to_rnet(self) -> rnet.Proxy:
-        """Convert this Proxy object to an rnet proxy object."""
-        return rnet.Proxy.all(self.to_url())
+    def to_wreq(self) -> wreq.Proxy:
+        """Convert this Proxy object to an wreq proxy object."""
+        return wreq.Proxy.all(self.to_url())
 
 
 class IMAPDetails(BaseModel):
